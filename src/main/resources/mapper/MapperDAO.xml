@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.rpt.mapper.MapperDAO">
+  <select id="version" resultType="java.lang.String">
+    select system_user();
+  </select>
+
+  <resultMap id="selectMap" type="java.util.Map">
+    <result column="ID" property="id"/>
+    <result column="REPORT_YEAR" property="year"/>
+    <result column="mon" property="mon"/>
+    <result column="ORGID" property="admdvs"/>
+    <result column="SHEET_NAME" property="sheetNo"/>
+    <collection column="ID" property="data" select="selectData"/>
+  </resultMap>
+
+  <select id="select" resultMap="selectMap">
+    select rpt.ID, rpt.REPORT_YEAR,rpt.ORGID,
+           (select  case AAA103
+                   when '一季度' then 3
+                   when '二季度' then 6
+                   when '三季度' then 9
+                   when '四季度' then 12
+                   when '1月' then 1
+                   when '2月' then 2
+                   when '3月' then 3
+                   when '4月' then 4
+                   when '5月' then 5
+                   when '6月' then 6
+                   when '7月' then 7
+                   when '8月' then 8
+                   when '9月' then 9
+                   when '10月' then 10
+                   when '11月' then 11
+                   when '12月' then 12 end
+           from aa10_report dic where dic.AAA100='REPORT_NO' and rpt.REPORT_NO=dic.AAA102) mon
+    ,rts.SHEET_NAME
+    from report_report rpt
+    left join report_template temp on rpt.TEMPLATE_ID=temp.ID
+    left join report_template_sheet rts on temp.ID = rts.TEMPLATE_ID
+    where rts.SHEET_NAME=#{no}
+      and rpt.REPORT_YEAR=#{year};
+  </select>
+
+  <select id="selectData" resultType="java.util.Map">
+    select concat(col, row_num) as loc, content from report_fixed_data
+    where REPORT_ID=#{id};
+  </select>
+
+  <insert id="insert_out_mdtrt_stt_e" parameterType="java.util.List">
+    insert into out_mdtrt_stt_e(STT_YEAR, STT_MON, ADMDVS, POOLAREA_NO, FUND_INSUTYPE, MED_MDTRT_TYPE, OUT_FEE_TYPE, RID, MDTRT_PSNTIME, MDTRT_PSNCNT, MDTRT_FEE)
+    values
+    <foreach collection="list" separator="," item="rcd">
+      (#{rcd.STT_YEAR},#{rcd.STT_MON},#{rcd.ADMDVS},#{rcd.POOLAREA_NO},#{rcd.FUND_INSUTYPE},#{rcd.MED_MDTRT_TYPE},#{rcd.OUT_FEE_TYPE},(select uuid() from dual),#{rcd.MDTRT_PSNTIME},#{rcd.MDTRT_PSNCNT},#{rcd.MDTRT_FEE})
+    </foreach>
+  </insert>
+
+  <insert id="insert_detl_ana_kpi_rslt_d" parameterType="java.util.List">
+    insert into detl_ana_kpi_rslt_d(STT_YEAR, STT_MON, ADMDVS, POOLAREA_NO, FUND_INSUTYPE, DETL_KPI_ID, RID, DETL_KPI_RSLT)
+    values
+    <foreach collection="list" separator="," item="rcd">
+      (#{rcd.STT_YEAR},#{rcd.STT_MON},#{rcd.ADMDVS},#{rcd.POOLAREA_NO},#{rcd.FUND_INSUTYPE},#{rcd.DETL_KPI_ID},(select uuid() from dual),#{rcd.DETL_KPI_RSLT})
+    </foreach>
+  </insert>
+</mapper>
